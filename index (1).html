@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>세 장의 그림</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400&family=Cormorant+Garamond:ital,wght@0,300;1,400&display=swap');
+  :root{--bg:#f5f0e8;--ink:#1a1410;--muted:#8a7d6e;--accent:#c4603a;--paper:#faf7f2;--border:#d4c9b8}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);font-family:'Noto Serif KR',serif;min-height:100vh}
+  header{text-align:center;padding:3.5rem 2rem 2rem}
+  header::after{content:'';display:block;width:50px;height:1px;background:var(--accent);margin:1.2rem auto 0}
+  .site-title{font-family:'Cormorant Garamond',serif;font-size:clamp(2.2rem,5vw,3.2rem);font-weight:300;font-style:italic}
+  .site-sub{margin-top:.4rem;font-size:.72rem;letter-spacing:.2em;color:var(--muted);text-transform:uppercase}
+  .instruction{text-align:center;padding:1.6rem 2rem .4rem;font-size:.86rem;color:var(--muted);line-height:1.9}
+  .inst-badge{display:inline-block;border:1px solid var(--border);padding:.28rem .9rem;font-size:.7rem;letter-spacing:.14em;color:var(--accent);margin-bottom:.5rem}
+  .gallery-section{max-width:860px;margin:1.6rem auto;padding:0 1.5rem}
+  .gallery-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+  .img-item{display:flex;flex-direction:column;gap:.3rem}
+  .img-card{position:relative;aspect-ratio:1/1;cursor:pointer;border:1px solid var(--border);background:var(--paper);overflow:hidden;transition:transform .22s,box-shadow .22s}
+  .img-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(26,20,16,.1)}
+  .img-card.selected{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+  .img-card img{width:100%;height:100%;object-fit:cover;display:block}
+  .order-badge{position:absolute;top:7px;left:7px;width:24px;height:24px;background:var(--accent);color:white;font-size:.72rem;font-family:'Cormorant Garamond',serif;display:flex;align-items:center;justify-content:center}
+  .img-label{font-size:.64rem;color:var(--muted);letter-spacing:.03em;padding:0 .1rem}
+  .selection-strip{max-width:860px;margin:.4rem auto 1.4rem;padding:0 1.5rem;display:flex;align-items:center;gap:.8rem}
+  .thumb-row{display:flex;gap:.5rem;flex:1}
+  .sel-thumb{width:52px;height:52px;border:1px solid var(--border);background:var(--paper);overflow:hidden;position:relative;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--border);font-size:.9rem}
+  .sel-thumb img{width:100%;height:100%;object-fit:cover}
+  .sel-thumb .num{position:absolute;bottom:0;left:0;right:0;background:var(--accent);color:white;font-size:.56rem;text-align:center;line-height:1.5;font-family:'Cormorant Garamond',serif}
+  .btn{border:none;cursor:pointer;font-family:'Noto Serif KR',serif;font-size:.78rem;letter-spacing:.08em;padding:.75rem 1.2rem;transition:background .18s,transform .14s;white-space:nowrap}
+  .btn-primary{background:var(--ink);color:var(--bg)}
+  .btn-primary:hover:not(:disabled){background:var(--accent);transform:translateY(-1px)}
+  .btn-primary:disabled{opacity:.3;cursor:not-allowed}
+  .btn-secondary{background:transparent;border:1px solid var(--border);color:var(--muted)}
+  .btn-secondary:hover{border-color:var(--ink);color:var(--ink)}
+  .loading{display:none;justify-content:center;gap:6px;padding:2rem}
+  .loading.active{display:flex}
+  .dot{width:7px;height:7px;background:var(--accent);border-radius:50%;animation:bounce 1.2s ease-in-out infinite}
+  .dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+  @keyframes bounce{0%,80%,100%{transform:translateY(0);opacity:.35}40%{transform:translateY(-9px);opacity:1}}
+  .story-section{max-width:660px;margin:1rem auto 5rem;padding:0 1.5rem;display:none;animation:fadein .5s ease forwards}
+  @keyframes fadein{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .story-card{background:var(--paper);border:1px solid var(--border);padding:2.6rem 3rem;position:relative}
+  .story-card::before{content:'';position:absolute;top:8px;left:8px;right:-8px;bottom:-8px;border:1px solid var(--border);z-index:-1}
+  .story-label{font-size:.64rem;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:1.3rem;display:flex;align-items:center;gap:.8rem}
+  .story-label::after{content:'';flex:1;height:1px;background:var(--border)}
+  .story-text{font-size:.94rem;line-height:2.1;color:var(--ink);font-weight:300;white-space:pre-wrap}
+  .cursor{display:inline-block;width:2px;height:1em;background:var(--accent);margin-left:1px;vertical-align:text-bottom;animation:blink .8s step-end infinite}
+  @keyframes blink{50%{opacity:0}}
+  .story-imgs{display:flex;gap:.5rem;margin-top:1.6rem;padding-top:1.3rem;border-top:1px solid var(--border)}
+  .story-imgs img{width:56px;height:56px;object-fit:cover;border:1px solid var(--border);opacity:.65}
+  .admin-bar{position:fixed;bottom:1.4rem;right:1.4rem;z-index:100;display:flex;flex-direction:column;gap:.4rem;align-items:flex-end}
+  .admin-toggle{background:var(--ink);color:var(--bg);border:none;padding:.44rem .9rem;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;font-family:'Noto Serif KR',serif;opacity:.4;transition:opacity .2s}
+  .admin-toggle:hover{opacity:1}
+  .admin-panel{display:none;background:var(--paper);border:1px solid var(--border);padding:1.1rem;width:272px;font-size:.75rem;color:var(--muted);line-height:1.8}
+  .admin-panel.open{display:block}
+  .admin-panel label{display:block;font-size:.63rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-top:.6rem;margin-bottom:.22rem}
+  .admin-panel input,.admin-panel textarea{width:100%;background:var(--bg);border:1px solid var(--border);padding:.42rem;font-family:'Noto Serif KR',serif;font-size:.75rem;color:var(--ink);resize:vertical}
+  .admin-save{background:var(--accent);color:white;border:none;padding:.44rem 1rem;font-size:.73rem;cursor:pointer;font-family:'Noto Serif KR',serif;width:100%;margin-top:.5rem}
+  .admin-clear{background:transparent;color:var(--muted);border:1px solid var(--border);padding:.3rem 1rem;font-size:.65rem;cursor:pointer;font-family:'Noto Serif KR',serif;width:100%;margin-top:.3rem}
+  .admin-clear:hover{border-color:var(--ink);color:var(--ink)}
+  @media(max-width:520px){.gallery-grid{gap:.6rem}.story-card{padding:1.8rem 1.6rem}.selection-strip{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="site-title">세 장의 그림</div>
+  <div class="site-sub">Three Pictures · One Story</div>
+</header>
+
+<div class="instruction">
+  <div><span class="inst-badge">순서대로 세 장을 골라주세요</span></div>
+  그림을 선택한 순서가 이야기의 흐름이 됩니다
+</div>
+
+<section class="gallery-section">
+  <div class="gallery-grid" id="galleryGrid"></div>
+</section>
+
+<div class="selection-strip">
+  <div class="thumb-row">
+    <div class="sel-thumb" id="th0">·</div>
+    <div class="sel-thumb" id="th1">·</div>
+    <div class="sel-thumb" id="th2">·</div>
+  </div>
+  <button class="btn btn-secondary" onclick="resetSelection()">초기화</button>
+  <button class="btn btn-primary" id="genBtn" disabled onclick="generateStory()">이야기 만들기 →</button>
+</div>
+
+<div class="loading" id="loading">
+  <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+</div>
+
+<section class="story-section" id="storySection">
+  <div class="story-card">
+    <div class="story-label">이야기</div>
+    <div class="story-text" id="storyText"></div>
+    <div class="story-imgs" id="storyImgs"></div>
+  </div>
+</section>
+
+<div class="admin-bar">
+  <div class="admin-panel" id="adminPanel">
+    <strong style="color:var(--ink);font-size:.76rem">특별한 조합 설정</strong><br>
+    <small>이 조합 선택 시 직접 쓴 이야기가 출력됩니다<br>저장하면 이 브라우저에 계속 유지됩니다</small>
+    <label>특별한 조합 (예: 5,4,6)</label>
+    <input type="text" id="specialComboInput" placeholder="그림 번호 3개, 쉼표로 구분">
+    <label>직접 쓴 이야기</label>
+    <textarea id="specialStoryInput" rows="8" placeholder="여기에 직접 쓴 이야기를 입력하세요..."></textarea>
+    <button class="admin-save" onclick="saveAdmin()">저장</button>
+    <button class="admin-clear" onclick="clearAdmin()">초기화</button>
+  </div>
+  <button class="admin-toggle" onclick="toggleAdmin()">관리자</button>
+</div>
+
+<script>
+const IMAGES = [
+  {id:1,file:'1.jpg',label:'강아지물고기'},
+  {id:2,file:'2.jpg',label:'나방 강아지'},
+  {id:3,file:'3.jpg',label:'창문 달린 새'},
+  {id:4,file:'4.jpg',label:'편지'},
+  {id:5,file:'5.jpg',label:'강아지'},
+  {id:6,file:'6.jpg',label:'집'},
+  {id:7,file:'7.jpg',label:'자동차'},
+  {id:8,file:'8.jpg',label:'사과'},
+  {id:9,file:'9.jpg',label:'나무'},
+];
+
+const FRAGMENTS = {
+  1:{open:'어느 날, 강과 하늘 사이 어딘가에서 물고기인지 강아지인지 모를 작은 생명이 태어났습니다.',mid:'그러다 강아지물고기를 만났습니다. 물 위를 헤엄치는 것도, 땅 위를 걷는 것도 할 줄 아는 이상한 친구였습니다.',close:'마지막으로 강아지물고기가 꼬리를 흔들며 물속으로 사라졌습니다. 그 자리에 동그란 물결만 남았습니다.'},
+  2:{open:'다리가 여덟 개 달린 나방 강아지 한 마리가 이른 아침 안개 속을 걷고 있었습니다.',mid:'그때 다리가 많은 나방 강아지가 나타났습니다. 날개를 접었다 폈다 하며 길을 같이 걸어주었습니다.',close:'나방 강아지는 날개를 크게 펼치더니 안개 속으로 천천히 날아올랐습니다. 그 날갯짓 소리가 오래도록 귓가에 맴돌았습니다.'},
+  3:{open:'창문이 부리에 붙어 있는 새가 있었습니다. 그 창문을 열면 다른 세상이 보인다는 소문이 있었습니다.',mid:'그 새가 부리의 창문을 살짝 열었습니다. 안에서 따뜻한 빛이 새어나왔습니다.',close:'새는 부리의 창문을 조용히 닫았습니다. 그 안에 무엇이 있었는지는 끝내 알 수 없었습니다.'},
+  4:{open:'우편함에 주소도 이름도 없는 편지 한 장이 꽂혀 있었습니다.',mid:'주머니 속에서 편지 한 장이 나왔습니다. 읽으면 읽을수록 글씨가 조금씩 달라졌습니다.',close:'편지는 스스로 접혀서 바람에 날아갔습니다. 받는 사람에게 닿았을까, 아무도 모릅니다.'},
+  5:{open:'작고 귀여운 강아지 한 마리가 아무도 없는 길 위에 혼자 앉아 있었습니다.',mid:'강아지 한 마리가 꼬리를 흔들며 다가왔습니다. 말은 못 해도 뭔가 알고 있는 것 같은 눈빛이었습니다.',close:'강아지는 멀리 사라지지 않았습니다. 그냥 근처 어딘가에 있었습니다. 그것만으로도 충분했습니다.'},
+  6:{open:'언덕 위에 집 한 채가 있었습니다. 불이 켜진 창문은 딱 하나뿐이었습니다.',mid:'집 한 채가 보였습니다. 문은 열려 있었고, 안에서 무언가 맛있는 냄새가 났습니다.',close:'집으로 돌아왔을 때, 처음 보는 것처럼 낯설고도 반가웠습니다. 집은 언제나 거기 있었습니다.'},
+  7:{open:'녹슨 자동차 한 대가 아무도 모르는 길 끝에 세워져 있었습니다.',mid:'자동차가 한 대 멈춰 섰습니다. 창문이 내려오더니 안에서 아무 말 없이 손을 내밀었습니다.',close:'자동차는 먼지를 일으키며 달려갔습니다. 뒷모습이 보이지 않을 때까지 한참을 바라보았습니다.'},
+  8:{open:'나무 아래에 사과 하나가 떨어져 있었습니다. 베어 물면 무슨 맛이 날지 아무도 몰랐습니다.',mid:'사과 하나가 굴러왔습니다. 집어 들었더니 속에서 작은 소리가 들렸습니다.',close:'사과는 먹지 않았습니다. 그냥 손에 쥐고 걸었습니다. 손이 따뜻해졌습니다.'},
+  9:{open:'아무것도 없는 벌판에 나무 한 그루가 서 있었습니다. 계절이 몇 번 바뀌어도 그 자리였습니다.',mid:'나무 한 그루가 나타났습니다. 아주 오래된 나무였고, 가지마다 작은 것들이 매달려 있었습니다.',close:'나무 아래에 앉았습니다. 바람이 지나가고, 잎이 흔들리고, 그것으로 이야기는 끝이었습니다.'}
+};
+
+// localStorage
+function lsGet(key,fallback){try{const v=localStorage.getItem(key);return v!==null?JSON.parse(v):fallback;}catch(e){return fallback;}}
+function lsSet(key,val){try{localStorage.setItem(key,JSON.stringify(val));}catch(e){}}
+
+let SPECIAL_COMBO = lsGet('sg_combo', [5,4,6]);
+let SPECIAL_STORY = lsGet('sg_story', '관리자 패널에서 직접 쓴 이야기를 입력해 주세요.\n\n우하단 [관리자] 버튼을 눌러 설정할 수 있습니다.');
+
+let selected = [];
+
+function renderGallery() {
+  const grid = document.getElementById('galleryGrid');
+  grid.innerHTML = '';
+  IMAGES.forEach(img => {
+    const idx = selected.indexOf(img.id), isSel = idx !== -1;
+    const item = document.createElement('div');
+    item.className = 'img-item';
+    const card = document.createElement('div');
+    card.className = 'img-card' + (isSel ? ' selected' : '');
+    const imgEl = document.createElement('img');
+    imgEl.src = img.file; imgEl.alt = img.label;
+    card.appendChild(imgEl);
+    if (isSel) {
+      const badge = document.createElement('div');
+      badge.className = 'order-badge'; badge.textContent = idx + 1;
+      card.appendChild(badge);
+    }
+    card.onclick = () => handleClick(img.id);
+    const label = document.createElement('div');
+    label.className = 'img-label'; label.textContent = img.label;
+    item.appendChild(card); item.appendChild(label);
+    grid.appendChild(item);
+  });
+}
+
+function handleClick(id) {
+  if (selected.includes(id)) { selected = selected.filter(s => s !== id); }
+  else { if (selected.length >= 3) return; selected.push(id); }
+  renderGallery(); updateThumbs();
+  document.getElementById('genBtn').disabled = selected.length < 3;
+}
+
+function updateThumbs() {
+  [0,1,2].forEach(i => {
+    const t = document.getElementById('th'+i);
+    const img = selected[i] ? IMAGES.find(m => m.id === selected[i]) : null;
+    t.innerHTML = img ? `<img src="${img.file}" alt="${img.label}"><div class="num">${i+1}</div>` : '·';
+  });
+}
+
+function resetSelection() {
+  selected = []; renderGallery(); updateThumbs();
+  document.getElementById('genBtn').disabled = true;
+  document.getElementById('storySection').style.display = 'none';
+  document.getElementById('loading').classList.remove('active');
+}
+
+async function generateStory() {
+  if (selected.length < 3) return;
+  const isSpecial = JSON.stringify(selected) === JSON.stringify(SPECIAL_COMBO);
+  document.getElementById('loading').classList.add('active');
+  document.getElementById('storySection').style.display = 'none';
+  const imgs = selected.map(id => IMAGES.find(m => m.id === id));
+  document.getElementById('storyImgs').innerHTML = imgs.map(m => `<img src="${m.file}" alt="${m.label}">`).join('');
+  await new Promise(r => setTimeout(r, 600));
+  const text = isSpecial ? SPECIAL_STORY : buildStory(selected);
+  document.getElementById('loading').classList.remove('active');
+  document.getElementById('storySection').style.display = 'block';
+  await typewrite(text);
+}
+
+function buildStory(ids) {
+  const [a,b,c] = ids;
+  return FRAGMENTS[a].open + '\n\n' + FRAGMENTS[b].mid + '\n\n' + FRAGMENTS[c].close;
+}
+
+async function typewrite(text) {
+  const el = document.getElementById('storyText');
+  el.innerHTML = '<span class="cursor"></span>';
+  const cur = el.querySelector('.cursor');
+  for (let i = 0; i < text.length; i++) {
+    cur.insertAdjacentText('beforebegin', text[i]);
+    await new Promise(r => setTimeout(r, text[i] === '\n' ? 55 : 18));
+  }
+  cur.remove();
+}
+
+function toggleAdmin() {
+  const panel = document.getElementById('adminPanel');
+  const isOpen = panel.classList.toggle('open');
+  if (isOpen) {
+    document.getElementById('specialComboInput').value = SPECIAL_COMBO.join(',');
+    document.getElementById('specialStoryInput').value = SPECIAL_STORY;
+  }
+}
+
+function saveAdmin() {
+  const nums = document.getElementById('specialComboInput').value
+    .split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n) && n >= 1 && n <= 9);
+  if (nums.length !== 3) { alert('그림 번호 3개를 쉼표로 입력해 주세요 (예: 5,4,6)'); return; }
+  const story = document.getElementById('specialStoryInput').value;
+  SPECIAL_COMBO = nums; SPECIAL_STORY = story;
+  lsSet('sg_combo', nums); lsSet('sg_story', story);
+  document.getElementById('adminPanel').classList.remove('open');
+  alert('저장 완료! 특별 조합: 그림 ' + nums.join(' → '));
+}
+
+function clearAdmin() {
+  if (!confirm('저장된 특별 이야기를 초기화할까요?')) return;
+  localStorage.removeItem('sg_combo'); localStorage.removeItem('sg_story');
+  SPECIAL_COMBO = [5,4,6];
+  SPECIAL_STORY = '관리자 패널에서 직접 쓴 이야기를 입력해 주세요.';
+  document.getElementById('specialComboInput').value = SPECIAL_COMBO.join(',');
+  document.getElementById('specialStoryInput').value = SPECIAL_STORY;
+  alert('초기화 완료!');
+}
+
+renderGallery();
+</script>
+</body>
+</html>
